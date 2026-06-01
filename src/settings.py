@@ -78,6 +78,21 @@ class Reward:
     USE_HIT_SHAPING: bool = True
 
 
+class Discretization:
+    """How the tabular Q-learning agent buckets the court into discrete states.
+
+    The environment hands the agent six continuous numbers, but a Q-table can
+    only look things up by exact, repeatable keys. So we round each number into
+    one of a small set of buckets. Fewer buckets means the agent generalizes
+    faster but sees the world more coarsely; more buckets is the reverse. Ball
+    direction is already just left/right and up/down, so it needs no buckets.
+    """
+
+    BALL_X_BINS: int = 12
+    BALL_Y_BINS: int = 12
+    AGENT_PADDLE_Y_BINS: int = 12
+
+
 class Training:
     """Training-loop hyperparameters."""
 
@@ -89,6 +104,8 @@ class Training:
     EPSILON_END: float = 0.05
     EPSILON_DECAY: float = 0.995
     CHECKPOINT_EVERY_EPISODES: int = 200
+    # Matches played per agent when measuring final performance.
+    EVALUATION_EPISODES: int = 20
     RANDOM_SEED: int = 42
 
 

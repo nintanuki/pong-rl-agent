@@ -11,32 +11,34 @@
 
 ## Environment
 
-- [ ] Implement `PongEnv.__init__()` (declare `observation_space` as Box(6,) and `action_space` as Discrete(3))
-- [ ] Implement `PongEnv.reset()`
-- [ ] Implement `PongEnv.step()` (delegate to `GameEngine.step`, map scored / agent_hit to reward, build gym tuple)
-- [ ] Implement `PongEnv._observe()` (6-value vector: ball x/y, ball vx/vy, agent paddle y, opponent paddle y; normalized)
-- [ ] Implement `PongEnv.render()` (pygame; rectangles only)
+- [x] Implement `PongEnv.__init__()` (declare `observation_space` as Box(6,) and `action_space` as Discrete(3))
+- [x] Implement `PongEnv.reset()`
+- [x] Implement `PongEnv.step()` (delegate to `GameEngine.step`, map scored / agent_hit to reward, build gym tuple)
+- [x] Implement `PongEnv._observe()` (6-value vector: ball x/y, ball vx/vy, agent paddle y, opponent paddle y; normalized)
+- [x] Implement `PongEnv.render()` (pygame; rectangles only)
 
 ## Agent
 
-- [ ] Implement `QLearningAgent.select_action()` (epsilon-greedy)
-- [ ] Implement `QLearningAgent.update()` (Bellman update)
-- [ ] Implement `QLearningAgent.decay_epsilon()`
-- [ ] Implement `QLearningAgent.save()` / `load()` (pickle the Q-table)
-- [ ] Decide and implement the state discretization used to key the Q-table
-- [ ] Implement `DQNAgent` (replay buffer + target network)
+- [x] Implement `QLearningAgent.select_action()` (epsilon-greedy)
+- [x] Implement `QLearningAgent.update()` (Bellman update)
+- [x] Implement `QLearningAgent.decay_epsilon()`
+- [x] Implement `QLearningAgent.save()` / `load()` (pickle the Q-table)
+- [x] Decide and implement the state discretization used to key the Q-table (position bins + velocity sign, see `Discretization` in settings)
+- [x] Implement `DQNAgent` (replay buffer + target network)
 
 ## Training and evaluation
 
-- [ ] Implement `Trainer.train()` (episode loop, logging, periodic checkpoints)
-- [ ] Implement `Trainer.plot_rewards()`
-- [ ] Implement `Evaluator.run_agent()` (load checkpoint, render, report mean / max / std)
-- [ ] Implement the random-action baseline path
-- [ ] Implement `Application.train()` and `Application.evaluate()` in `main.py`
+- [x] Implement `Trainer.train()` (episode loop, logging, periodic checkpoints)
+- [x] Implement `Trainer.plot_rewards()`
+- [x] Implement `Evaluator.run_agent()` (load checkpoint, render, report mean / max / std)
+- [x] Implement the random-action baseline path
+- [x] Implement `Application.train()` and `Application.evaluate()` in `main.py`
+- [ ] Run a full-length training run on the chosen settings and tune `OPPONENT_SPEED_PIXELS` from the curve
 
 ## Report
 
-- [ ] Fill out every italicized TODO placeholder in `docs/REPORT.docx`
+- [x] Fill the descriptive report sections (Name/Purpose, Algorithms, Environment, Libraries, Application Design, Instructions)
+- [ ] Fill the remaining italicized TODOs in `docs/REPORT.docx` (Results, Discussion)
 - [ ] Capture training-reward curve and gameplay screenshots for the Results section
 - [x] Cite ClearCode's Pong tutorial (https://www.youtube.com/watch?v=Qf3-aDXG8q4) as the upstream lineage of the engine — counts as one of the 3 outside sources
 - [ ] Add at least 2 more outside sources to references (suggested: Gymnasium docs + DQN Nature paper)

@@ -7,8 +7,6 @@ A reinforcement learning agent that learns to play Pong through trial and error 
 ```
 .
 ├── docs/           Project report and AI use documentation
-├── references/     Reference materials
-├── rubric/         Source assignment requirements
 ├── src/
 │   ├── output/              Training checkpoints and reward-curve plots
 │   ├── main.py              Entry point with `--mode {train, evaluate}`

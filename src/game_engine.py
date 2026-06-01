@@ -346,3 +346,13 @@ class GameEngine:
     def points_to_win(self) -> int:
         """Score at which an episode ends."""
         return self._points_to_win
+
+    @property
+    def ball_speed_x(self) -> int:
+        """Horizontal speed magnitude. Lets the env scale velocity to [-1, 1]."""
+        return self._ball_speed_x
+
+    @property
+    def ball_speed_y(self) -> int:
+        """Vertical speed magnitude. Lets the env scale velocity to [-1, 1]."""
+        return self._ball_speed_y
