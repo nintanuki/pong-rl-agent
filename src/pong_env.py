@@ -235,6 +235,22 @@ class PongEnv(gym.Env):
         )
         pygame.draw.rect(self._screen, ColorSettings.BALL, ball_rect)
 
+        # Score, so the viewer can tell who is winning: opponent on the left of
+        # center, the agent (right paddle) on the right, matching their sides.
+        center_x = game.screen_width // 2
+        opponent_surface = self._font.render(
+            str(game.opponent_score), True, ColorSettings.SCORE
+        )
+        agent_surface = self._font.render(
+            str(game.agent_score), True, ColorSettings.SCORE
+        )
+        self._screen.blit(
+            opponent_surface, opponent_surface.get_rect(midright=(center_x - 40, 50))
+        )
+        self._screen.blit(
+            agent_surface, agent_surface.get_rect(midleft=(center_x + 40, 50))
+        )
+
         pygame.display.flip()
         self._clock.tick(GameSettings.RENDER_FRAMES_PER_SECOND)
         return True
