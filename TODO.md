@@ -45,5 +45,4 @@
 
 - [ ] Freeze `requirements.txt` with `pip freeze`
 - [ ] Verify README setup steps work from a fresh clone
-- [ ] Fill out `docs/AI_Use_Log.docx` with final tool usage
 - [ ] Push to public GitHub repo; submit the link
