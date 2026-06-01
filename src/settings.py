@@ -134,6 +134,14 @@ class DQNSettings:
     TARGET_NETWORK_UPDATE_EVERY_STEPS: int = 1000
     LEARNING_RATE: float = 1e-3
 
+    # The DQN trains a neural network on every step, so it is far slower per
+    # step than the tabular agent, and its games lengthen as it learns to rally.
+    # A smaller episode budget and a tighter per-game step cap keep its training
+    # to a few minutes (see the report's Discussion). The tabular agent keeps
+    # the larger budget in TrainingSettings.
+    EPISODES: int = 600
+    MAX_STEPS_PER_EPISODE: int = 800
+
 
 class AgentSettings:
     """Which agents to run."""

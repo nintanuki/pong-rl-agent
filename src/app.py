@@ -140,25 +140,42 @@ class Application:
     # ------------------------------------------------------------------
 
     def train(self) -> None:
-        """Train every enabled agent and save its checkpoints and reward curve."""
+        """Train every enabled agent and save its checkpoints and reward curve.
+
+        The two agents get different run lengths: the tabular agent uses the
+        full TrainingSettings budget, while the DQN uses its own smaller budget
+        (it is much slower per step, so this keeps its training to minutes).
+        """
         if AgentSettings.RUN_Q_LEARNING:
-            self._train_one(self._build_q_learning_agent(), Q_LEARNING_NAME)
+            self._train_one(
+                self._build_q_learning_agent(),
+                Q_LEARNING_NAME,
+                TrainingSettings.EPISODES,
+                TrainingSettings.MAX_STEPS_PER_EPISODE,
+            )
 
         if AgentSettings.RUN_DQN:
-            self._train_one(self._build_dqn_agent(), DQN_NAME)
+            self._train_one(
+                self._build_dqn_agent(),
+                DQN_NAME,
+                DQNSettings.EPISODES,
+                DQNSettings.MAX_STEPS_PER_EPISODE,
+            )
 
-    def _train_one(self, agent, name: str) -> None:
+    def _train_one(self, agent, name: str, episodes: int, max_steps: int) -> None:
         """Run the full training loop for a single agent.
 
         Args:
             agent: A freshly built agent to train.
             name: Its label, e.g. "q_learning", used for its files and logs.
+            episodes: How many matches to train this agent for.
+            max_steps: The per-match step cap for this agent.
         """
         trainer = Trainer(
             env=self._build_env(),
             agent=agent,
-            episodes=TrainingSettings.EPISODES,
-            max_steps=TrainingSettings.MAX_STEPS_PER_EPISODE,
+            episodes=episodes,
+            max_steps=max_steps,
             name=name,
             checkpoint_every=TrainingSettings.CHECKPOINT_EVERY_EPISODES,
         )
