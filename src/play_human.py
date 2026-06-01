@@ -18,34 +18,42 @@ is a sanity test, not a polished game build.
 import pygame
 
 from game_engine import ACTION_DOWN, ACTION_STAY, ACTION_UP, GameEngine
-from settings import Colors, Game
+from settings import ColorSettings, GameSettings
 
 
 class HumanPlayer:
     """Pygame loop that lets a human pilot the agent paddle."""
 
+    # ------------------------------------------------------------------
+    # INIT
+    # ------------------------------------------------------------------
+
     def __init__(self) -> None:
         """Initialize pygame, the engine, and the window."""
         pygame.init()
         self._engine = GameEngine(
-            screen_width=Game.SCREEN_WIDTH_PIXELS,
-            screen_height=Game.SCREEN_HEIGHT_PIXELS,
-            paddle_width=Game.PADDLE_WIDTH_PIXELS,
-            paddle_height=Game.PADDLE_HEIGHT_PIXELS,
-            paddle_margin=Game.PADDLE_MARGIN_PIXELS,
-            paddle_speed=Game.PADDLE_SPEED_PIXELS,
-            opponent_speed=Game.OPPONENT_SPEED_PIXELS,
-            ball_size=Game.BALL_SIZE_PIXELS,
-            ball_speed_x=Game.BALL_SPEED_X_PIXELS,
-            ball_speed_y=Game.BALL_SPEED_Y_PIXELS,
-            points_to_win=Game.POINTS_TO_WIN,
+            screen_width=GameSettings.SCREEN_WIDTH_PIXELS,
+            screen_height=GameSettings.SCREEN_HEIGHT_PIXELS,
+            paddle_width=GameSettings.PADDLE_WIDTH_PIXELS,
+            paddle_height=GameSettings.PADDLE_HEIGHT_PIXELS,
+            paddle_margin=GameSettings.PADDLE_MARGIN_PIXELS,
+            paddle_speed=GameSettings.PADDLE_SPEED_PIXELS,
+            opponent_speed=GameSettings.OPPONENT_SPEED_PIXELS,
+            ball_size=GameSettings.BALL_SIZE_PIXELS,
+            ball_speed_x=GameSettings.BALL_SPEED_X_PIXELS,
+            ball_speed_y=GameSettings.BALL_SPEED_Y_PIXELS,
+            points_to_win=GameSettings.POINTS_TO_WIN,
         )
         self._screen = pygame.display.set_mode(
-            (Game.SCREEN_WIDTH_PIXELS, Game.SCREEN_HEIGHT_PIXELS)
+            (GameSettings.SCREEN_WIDTH_PIXELS, GameSettings.SCREEN_HEIGHT_PIXELS)
         )
         pygame.display.set_caption("Pong (manual test mode)")
         self._clock = pygame.time.Clock()
         self._font = pygame.font.SysFont(None, 64)
+
+    # ------------------------------------------------------------------
+    # INPUT
+    # ------------------------------------------------------------------
 
     def _handle_quit_events(self) -> bool:
         """Drain the event queue, watching only for quit requests.
@@ -75,17 +83,21 @@ class HumanPlayer:
             return ACTION_DOWN
         return ACTION_STAY
 
+    # ------------------------------------------------------------------
+    # RENDER
+    # ------------------------------------------------------------------
+
     def _draw(self) -> None:
         """Render one frame: background, center line, paddles, ball, score."""
         engine = self._engine
-        self._screen.fill(Colors.BACKGROUND)
+        self._screen.fill(ColorSettings.BACKGROUND)
 
         # Dashed center line.
         dash_height = 16
         gap = 12
         x = engine.screen_width // 2 - 2
         for y in range(0, engine.screen_height, dash_height + gap):
-            pygame.draw.rect(self._screen, Colors.CENTER_LINE, (x, y, 4, dash_height))
+            pygame.draw.rect(self._screen, ColorSettings.CENTER_LINE, (x, y, 4, dash_height))
 
         # Paddles.
         half_paddle = engine.paddle_height / 2
@@ -101,8 +113,8 @@ class HumanPlayer:
             engine.paddle_width,
             engine.paddle_height,
         )
-        pygame.draw.rect(self._screen, Colors.PADDLE, agent_rect)
-        pygame.draw.rect(self._screen, Colors.PADDLE, opponent_rect)
+        pygame.draw.rect(self._screen, ColorSettings.PADDLE, agent_rect)
+        pygame.draw.rect(self._screen, ColorSettings.PADDLE, opponent_rect)
 
         # Ball.
         ball_x, ball_y = engine.ball_position
@@ -110,13 +122,13 @@ class HumanPlayer:
         ball_rect = pygame.Rect(
             ball_x - half_ball, ball_y - half_ball, engine.ball_size, engine.ball_size
         )
-        pygame.draw.rect(self._screen, Colors.BALL, ball_rect)
+        pygame.draw.rect(self._screen, ColorSettings.BALL, ball_rect)
 
         # Score: opponent on the left of center, agent on the right.
         opponent_surface = self._font.render(
-            str(engine.opponent_score), True, Colors.SCORE
+            str(engine.opponent_score), True, ColorSettings.SCORE
         )
-        agent_surface = self._font.render(str(engine.agent_score), True, Colors.SCORE)
+        agent_surface = self._font.render(str(engine.agent_score), True, ColorSettings.SCORE)
         center_x = engine.screen_width // 2
         self._screen.blit(
             opponent_surface, opponent_surface.get_rect(midright=(center_x - 40, 50))
@@ -127,6 +139,10 @@ class HumanPlayer:
 
         pygame.display.flip()
 
+    # ------------------------------------------------------------------
+    # RUN
+    # ------------------------------------------------------------------
+
     def run(self) -> None:
         """Run the human-play loop until the window is closed."""
         running = True
@@ -136,7 +152,7 @@ class HumanPlayer:
             if result.done:
                 self._engine.reset()
             self._draw()
-            self._clock.tick(Game.HUMAN_FRAMES_PER_SECOND)
+            self._clock.tick(GameSettings.HUMAN_FRAMES_PER_SECOND)
         pygame.quit()
 
 

@@ -16,6 +16,10 @@ import numpy as np
 class Evaluator:
     """Plays a trained agent and a random baseline, and summarizes the results."""
 
+    # ------------------------------------------------------------------
+    # INIT
+    # ------------------------------------------------------------------
+
     def __init__(self, env, episodes: int, render: bool = False) -> None:
         """Store what to evaluate and how.
 
@@ -28,6 +32,41 @@ class Evaluator:
         self.env = env
         self.episodes = episodes
         self.render = render
+
+    # ------------------------------------------------------------------
+    # WATCH
+    # ------------------------------------------------------------------
+
+    def watch(self, agent) -> None:
+        """Play the trained agent on screen until the viewer closes the window.
+
+        This is the "watch it play" half of test mode. It keeps starting fresh
+        matches so there is always something to see, and returns as soon as the
+        window is closed. The scoring is left to `run_agent`, which is called
+        afterward, so how long you watch never changes the reported numbers.
+
+        Args:
+            agent: A trained agent. Its exploration is turned off so you see its
+                best play, not random moves.
+        """
+        if hasattr(agent, "epsilon"):
+            agent.epsilon = 0.0
+
+        observation, _info = self.env.reset()
+        while True:
+            action = agent.select_action(observation)
+            observation, _reward, terminated, truncated, _info = self.env.step(action)
+
+            # render returns False once the window is closed; that is our cue
+            # to stop watching and move on to scoring.
+            if not self.env.render():
+                break
+            if terminated or truncated:
+                observation, _info = self.env.reset()
+
+    # ------------------------------------------------------------------
+    # SCORING
+    # ------------------------------------------------------------------
 
     def run_agent(self, agent) -> dict:
         """Play `episodes` matches and summarize the reward earned.

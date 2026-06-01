@@ -27,6 +27,10 @@ import torch.nn as nn
 class DQNAgent:
     """Deep Q-learning over the raw six-number observation."""
 
+    # ------------------------------------------------------------------
+    # INIT
+    # ------------------------------------------------------------------
+
     def __init__(
         self,
         state_size: int,
@@ -84,6 +88,10 @@ class DQNAgent:
         self.replay_buffer: deque = deque(maxlen=replay_buffer_size)
         self._learn_step_counter = 0
 
+    # ------------------------------------------------------------------
+    # NETWORK
+    # ------------------------------------------------------------------
+
     def _build_network(
         self, state_size: int, action_count: int, hidden_layer_sizes: tuple[int, ...]
     ) -> nn.Module:
@@ -113,6 +121,10 @@ class DQNAgent:
         layers.append(nn.Linear(input_size, action_count))
         return nn.Sequential(*layers)
 
+    # ------------------------------------------------------------------
+    # ACTION SELECTION
+    # ------------------------------------------------------------------
+
     def select_action(self, observation: np.ndarray) -> int:
         """Choose a move: usually the network's favorite, sometimes random.
 
@@ -130,6 +142,10 @@ class DQNAgent:
             state_tensor = torch.as_tensor(observation, dtype=torch.float32)
             move_scores = self.online_network(state_tensor)
         return int(torch.argmax(move_scores).item())
+
+    # ------------------------------------------------------------------
+    # LEARNING
+    # ------------------------------------------------------------------
 
     def remember(
         self,
@@ -201,6 +217,10 @@ class DQNAgent:
     def decay_epsilon(self) -> None:
         """Take one step of the exploration schedule, never below the floor."""
         self.epsilon = max(self.epsilon_end, self.epsilon * self.epsilon_decay)
+
+    # ------------------------------------------------------------------
+    # PERSISTENCE
+    # ------------------------------------------------------------------
 
     def save(self, path) -> None:
         """Write the live network's weights to disk for later play.

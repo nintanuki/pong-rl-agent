@@ -17,6 +17,7 @@ import gymnasium as gym
 from gymnasium import spaces
 
 from game_engine import GameEngine
+from settings import ColorSettings, GameSettings
 
 
 # The agent has exactly three choices each tick. Naming them keeps the rest of
@@ -30,13 +31,17 @@ OBSERVATION_SIZE = 6
 class PongEnv(gym.Env):
     """Wrap a `GameEngine` in the gymnasium API the learning agents expect."""
 
+    # ------------------------------------------------------------------
+    # INIT
+    # ------------------------------------------------------------------
+
     def __init__(self, game_engine: GameEngine, reward_config) -> None:
         """Store the game and the reward rulebook, and declare the spaces.
 
         Args:
             game_engine: The pure-logic Pong game this env drives. Its `step`
                 return value is what `step` below turns into a reward.
-            reward_config: The `Reward` settings namespace (points and the hit
+            reward_config: The `RewardSettings` namespace (points and the hit
                 bonus). Read by `_reward_for` on every step.
         """
         super().__init__()
@@ -50,6 +55,10 @@ class PongEnv(gym.Env):
         self.observation_space = spaces.Box(
             low=-1.0, high=1.0, shape=(OBSERVATION_SIZE,), dtype=np.float32
         )
+
+    # ------------------------------------------------------------------
+    # GYMNASIUM API
+    # ------------------------------------------------------------------
 
     def reset(self, seed=None, options=None) -> tuple[np.ndarray, dict]:
         """Start a fresh match and hand back the opening observation.
@@ -85,6 +94,10 @@ class PongEnv(gym.Env):
         observation = self._observe()
         info = {"scored": result.scored, "agent_hit": result.agent_hit}
         return observation, reward, result.done, False, info
+
+    # ------------------------------------------------------------------
+    # REWARD AND OBSERVATION
+    # ------------------------------------------------------------------
 
     def _reward_for(self, result) -> float:
         """Turn the engine's step outcome into a single number to learn from.
@@ -156,18 +169,28 @@ class PongEnv(gym.Env):
             dtype=np.float32,
         )
 
-    def render(self) -> None:
+    # ------------------------------------------------------------------
+    # RENDER
+    # ------------------------------------------------------------------
+
+    def render(self) -> bool:
         """Draw the current frame with pygame, for watching a trained agent.
 
         Rendering is deliberately optional and imported lazily so that headless
         training never pays for pygame. Paddles and ball are plain rectangles;
         there are no sprites, sound, or effects.
+
+        Returns:
+            True while the window is open, False once the user has closed it.
+            The watch loop in `Evaluator.watch` reads this to know when to stop.
         """
         import pygame
 
-        from settings import Colors
-
         game = self._game
+
+        # Once the window is closed we stay closed; don't try to reopen it.
+        if getattr(self, "_window_closed", False):
+            return False
 
         # First call sets up the window and clock; later calls reuse them.
         if not hasattr(self, "_screen"):
@@ -180,13 +203,14 @@ class PongEnv(gym.Env):
             self._font = pygame.font.SysFont(None, 64)
 
         # Draining the event queue keeps the OS from treating the window as
-        # frozen while the agent plays.
+        # frozen, and lets us notice when the user closes it.
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
-                return
+                self._window_closed = True
+                return False
 
-        self._screen.fill(Colors.BACKGROUND)
+        self._screen.fill(ColorSettings.BACKGROUND)
         half_paddle = game.paddle_height / 2
 
         agent_rect = pygame.Rect(
@@ -201,15 +225,16 @@ class PongEnv(gym.Env):
             game.paddle_width,
             game.paddle_height,
         )
-        pygame.draw.rect(self._screen, Colors.PADDLE, agent_rect)
-        pygame.draw.rect(self._screen, Colors.PADDLE, opponent_rect)
+        pygame.draw.rect(self._screen, ColorSettings.PADDLE, agent_rect)
+        pygame.draw.rect(self._screen, ColorSettings.PADDLE, opponent_rect)
 
         ball_x, ball_y = game.ball_position
         half_ball = game.ball_size / 2
         ball_rect = pygame.Rect(
             ball_x - half_ball, ball_y - half_ball, game.ball_size, game.ball_size
         )
-        pygame.draw.rect(self._screen, Colors.BALL, ball_rect)
+        pygame.draw.rect(self._screen, ColorSettings.BALL, ball_rect)
 
         pygame.display.flip()
-        self._clock.tick(60)
+        self._clock.tick(GameSettings.RENDER_FRAMES_PER_SECOND)
+        return True

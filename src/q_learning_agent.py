@@ -18,11 +18,15 @@ from collections import defaultdict
 
 import numpy as np
 
-from settings import Discretization
+from settings import DiscretizationSettings
 
 
 class QLearningAgent:
     """Epsilon-greedy tabular Q-learning over a bucketed observation."""
+
+    # ------------------------------------------------------------------
+    # INIT
+    # ------------------------------------------------------------------
 
     def __init__(
         self,
@@ -59,6 +63,10 @@ class QLearningAgent:
             lambda: np.zeros(action_count, dtype=np.float64)
         )
 
+    # ------------------------------------------------------------------
+    # ACTION SELECTION
+    # ------------------------------------------------------------------
+
     def select_action(self, observation: np.ndarray) -> int:
         """Choose a move: usually the best one known, occasionally a random one.
 
@@ -77,6 +85,10 @@ class QLearningAgent:
 
         state = self._discretize(observation)
         return int(np.argmax(self.q_table[state]))
+
+    # ------------------------------------------------------------------
+    # LEARNING
+    # ------------------------------------------------------------------
 
     def update(
         self,
@@ -118,6 +130,10 @@ class QLearningAgent:
         """
         self.epsilon = max(self.epsilon_end, self.epsilon * self.epsilon_decay)
 
+    # ------------------------------------------------------------------
+    # STATE ENCODING
+    # ------------------------------------------------------------------
+
     def _discretize(self, observation: np.ndarray) -> tuple:
         """Round the continuous snapshot into an exact, repeatable table key.
 
@@ -135,11 +151,11 @@ class QLearningAgent:
         ball_x, ball_y, velocity_x, velocity_y, agent_paddle_y, _opponent = observation
 
         return (
-            self._bucket(ball_x, Discretization.BALL_X_BINS),
-            self._bucket(ball_y, Discretization.BALL_Y_BINS),
+            self._bucket(ball_x, DiscretizationSettings.BALL_X_BINS),
+            self._bucket(ball_y, DiscretizationSettings.BALL_Y_BINS),
             int(np.sign(velocity_x)),
             int(np.sign(velocity_y)),
-            self._bucket(agent_paddle_y, Discretization.AGENT_PADDLE_Y_BINS),
+            self._bucket(agent_paddle_y, DiscretizationSettings.AGENT_PADDLE_Y_BINS),
         )
 
     def _bucket(self, value: float, bin_count: int) -> int:
@@ -157,6 +173,10 @@ class QLearningAgent:
         # exact value 1.0 lands in the last band instead of one past the end.
         scaled = (value + 1) / 2 * bin_count
         return int(min(bin_count - 1, max(0, int(scaled))))
+
+    # ------------------------------------------------------------------
+    # PERSISTENCE
+    # ------------------------------------------------------------------
 
     def save(self, path) -> None:
         """Write the learned table to disk so it can be played back later.

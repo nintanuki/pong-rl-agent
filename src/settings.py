@@ -7,6 +7,10 @@ numbers elsewhere in the project; if a value can be tuned, it lives here.
 from pathlib import Path
 
 
+# ---------------------------------------------------------------------------
+# PATHS
+# ---------------------------------------------------------------------------
+
 class Paths:
     """Filesystem paths used by the application."""
 
@@ -16,7 +20,11 @@ class Paths:
     PLOT_DIR: Path = OUTPUT_DIR / "plots"
 
 
-class Game:
+# ---------------------------------------------------------------------------
+# GAME
+# ---------------------------------------------------------------------------
+
+class GameSettings:
     """Pong playfield geometry and motion.
 
     The agent controls the right-hand paddle; a scripted AI controls the left
@@ -52,7 +60,7 @@ class Game:
     HUMAN_FRAMES_PER_SECOND: int = 60
 
 
-class Colors:
+class ColorSettings:
     """RGB colors for the minimal, asset-free render."""
 
     BACKGROUND: tuple[int, int, int] = (20, 20, 20)
@@ -62,7 +70,11 @@ class Colors:
     SCORE: tuple[int, int, int] = (200, 200, 200)
 
 
-class Reward:
+# ---------------------------------------------------------------------------
+# REWARDS
+# ---------------------------------------------------------------------------
+
+class RewardSettings:
     """Reward shaping for the Pong environment.
 
     Rewards are framed from the agent's (right paddle) point of view: scoring
@@ -78,7 +90,11 @@ class Reward:
     USE_HIT_SHAPING: bool = True
 
 
-class Discretization:
+# ---------------------------------------------------------------------------
+# LEARNING
+# ---------------------------------------------------------------------------
+
+class DiscretizationSettings:
     """How the tabular Q-learning agent buckets the court into discrete states.
 
     The environment hands the agent six continuous numbers, but a Q-table can
@@ -93,7 +109,7 @@ class Discretization:
     AGENT_PADDLE_Y_BINS: int = 12
 
 
-class Training:
+class TrainingSettings:
     """Training-loop hyperparameters."""
 
     EPISODES: int = 2000
@@ -109,7 +125,7 @@ class Training:
     RANDOM_SEED: int = 42
 
 
-class DQN:
+class DQNSettings:
     """Deep Q-Network hyperparameters (only used if DQN is enabled)."""
 
     HIDDEN_LAYER_SIZES: tuple[int, ...] = (128, 128)
@@ -119,14 +135,18 @@ class DQN:
     LEARNING_RATE: float = 1e-3
 
 
-class Agents:
+class AgentSettings:
     """Which agents to run."""
 
     RUN_Q_LEARNING: bool = True
     RUN_DQN: bool = True
 
 
-class Visualization:
+# ---------------------------------------------------------------------------
+# OUTPUT
+# ---------------------------------------------------------------------------
+
+class VisualizationSettings:
     """Plot styling and output sizes."""
 
     FIGURE_WIDTH_INCHES: float = 10.0
@@ -134,7 +154,7 @@ class Visualization:
     DPI: int = 120
 
 
-class Logging:
+class LoggingSettings:
     """Console logging levels and prefixes."""
 
     LEVEL: str = "INFO"

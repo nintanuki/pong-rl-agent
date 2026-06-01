@@ -9,7 +9,8 @@ A reinforcement learning agent that learns to play Pong through trial and error 
 ├── docs/           Project report and AI use documentation
 ├── src/
 │   ├── output/              Training checkpoints and reward-curve plots
-│   ├── main.py              Entry point with `--mode {train, evaluate}`
+│   ├── main.py              Entry point: parses `--mode {train, test}` and runs the app
+│   ├── app.py               Application orchestration (build env + agents, train/test)
 │   ├── settings.py          Namespaced hyperparameters
 │   ├── game_engine.py       Pure-logic Pong state machine
 │   ├── pong_env.py          Gymnasium-compatible environment wrapper
@@ -51,11 +52,15 @@ pip install -r requirements.txt
 
 ```bash
 cd src
-# Train a new agent
+# Train a new agent (saves checkpoints + a reward curve)
 python main.py --mode train
 
-# Watch a previously trained agent play
-python main.py --mode evaluate
+# Watch the latest trained agent play, then print its score vs a random baseline.
+# Close the window when you're done watching to see the numbers.
+python main.py --mode test
+
+# Skip watching and just print the scores
+python main.py --mode test --headless
 
 # Play Pong yourself to sanity-check the engine (Up / Down arrows)
 python play_human.py

@@ -50,6 +50,10 @@ class StepResult(NamedTuple):
 class GameEngine:
     """Pure-logic Pong game suitable for both headless and rendered use."""
 
+    # ------------------------------------------------------------------
+    # INIT
+    # ------------------------------------------------------------------
+
     def __init__(
         self,
         screen_width: int,
@@ -109,6 +113,10 @@ class GameEngine:
         self._opponent_score: int = 0
         self.reset()
 
+    # ------------------------------------------------------------------
+    # RESET AND SERVE
+    # ------------------------------------------------------------------
+
     def reset(self) -> None:
         """Reset paddles to center, zero the score, and serve a fresh ball."""
         center_y = self._screen_height / 2
@@ -124,6 +132,10 @@ class GameEngine:
         self._ball_y = self._screen_height / 2
         self._ball_vx = self._ball_speed_x * self._rng.choice((-1, 1))
         self._ball_vy = self._ball_speed_y * self._rng.choice((-1, 1))
+
+    # ------------------------------------------------------------------
+    # PER-STEP UPDATE
+    # ------------------------------------------------------------------
 
     def step(self, action: int) -> StepResult:
         """Advance the game by one tick.
@@ -186,6 +198,10 @@ class GameEngine:
         """
         half = self._paddle_height / 2
         return max(half, min(self._screen_height - half, center_y))
+
+    # ------------------------------------------------------------------
+    # COLLISIONS
+    # ------------------------------------------------------------------
 
     def _bounce_off_walls(self) -> None:
         """Reflect the ball off the top and bottom walls."""
@@ -252,6 +268,10 @@ class GameEngine:
             and ball_top <= paddle_bottom
         )
 
+    # ------------------------------------------------------------------
+    # SCORING
+    # ------------------------------------------------------------------
+
     def _check_scoring(self) -> Optional[str]:
         """Award a point and re-serve when the ball leaves through a goal.
 
@@ -274,7 +294,7 @@ class GameEngine:
         return None
 
     # ------------------------------------------------------------------
-    # Read-only state, consumed by the env wrapper and the renderer.
+    # READ-ONLY STATE
     # ------------------------------------------------------------------
 
     @property

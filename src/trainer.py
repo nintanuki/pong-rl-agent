@@ -18,11 +18,15 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-from settings import Logging, Paths, Visualization
+from settings import LoggingSettings, Paths, VisualizationSettings
 
 
 class Trainer:
     """Runs the episode loop for a single agent and records its progress."""
+
+    # ------------------------------------------------------------------
+    # INIT
+    # ------------------------------------------------------------------
 
     def __init__(
         self,
@@ -60,12 +64,142 @@ class Trainer:
         Paths.CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
         Paths.PLOT_DIR.mkdir(parents=True, exist_ok=True)
 
+    # ------------------------------------------------------------------
+    # LEARNING STEP
+    # ------------------------------------------------------------------
+
+    def _learn_from_step(
+        self, observation, action, reward, next_observation, terminated
+    ) -> None:
+        """Hand one move to the agent in whatever form it learns from.
+
+        The two agents learn differently: the tabular agent updates its table on
+        the spot, while the DQN agent files the move into replay memory and then
+        trains on a batch. We pick the right path by what the agent supports.
+
+        Args:
+            observation: Snapshot before the move.
+            action: Move taken.
+            reward: Reward earned.
+            next_observation: Snapshot after the move.
+            terminated: Whether the match ended on this step.
+        """
+        if hasattr(self.agent, "update"):
+            # Tabular Q-learning: adjust the estimate immediately.
+            self.agent.update(
+                observation, action, reward, next_observation, terminated
+            )
+        else:
+            # Replay-based agent (DQN): remember now, learn from a batch.
+            self.agent.remember(
+                observation, action, reward, next_observation, terminated
+            )
+            self.agent.learn()
+
+    # ------------------------------------------------------------------
+    # CHECKPOINTS
+    # ------------------------------------------------------------------
+
+    def save_checkpoint(self, episode: int) -> None:
+        """Write the current agent to disk, tagged with the episode number.
+
+        Args:
+            episode: Which match we just finished, used in the filename.
+        """
+        checkpoint_path = (
+            Paths.CHECKPOINT_DIR / f"{self.name}_episode_{episode:05d}.ckpt"
+        )
+        self.agent.save(checkpoint_path)
+
+    # ------------------------------------------------------------------
+    # PLOTTING
+    # ------------------------------------------------------------------
+
+    def plot_rewards(self, rewards: list[float]) -> None:
+        """Save a reward-per-match line chart with a smoothed overlay.
+
+        The raw line is noisy match to match, so a rolling average is drawn on
+        top to make the overall trend (hopefully upward) easy to read.
+
+        Args:
+            rewards: The per-match reward totals from `train`.
+        """
+        figure, axes = plt.subplots(
+            figsize=(
+                VisualizationSettings.FIGURE_WIDTH_INCHES,
+                VisualizationSettings.FIGURE_HEIGHT_INCHES,
+            )
+        )
+        axes.plot(rewards, color="#bbbbbb", linewidth=1, label="Reward per match")
+
+        rolling = self._rolling_mean(rewards, window=50)
+        if rolling:
+            axes.plot(rolling, color="#1f77b4", linewidth=2, label="50-match average")
+
+        axes.set_title(f"Training reward: {self.name}")
+        axes.set_xlabel("Match")
+        axes.set_ylabel("Total reward")
+        axes.legend()
+
+        plot_path = Paths.PLOT_DIR / f"{self.name}_reward_curve.png"
+        figure.savefig(plot_path, dpi=VisualizationSettings.DPI, bbox_inches="tight")
+        plt.close(figure)
+
+    def _rolling_mean(self, values: list[float], window: int) -> list[float]:
+        """Average each point with its recent neighbors to smooth the curve.
+
+        Args:
+            values: The raw per-match rewards.
+            window: How many recent matches to average over.
+
+        Returns:
+            The smoothed series, one shorter-window value per input point. Used
+            only by `plot_rewards`.
+        """
+        if len(values) < window:
+            return []
+
+        smoothed: list[float] = []
+        running_sum = 0.0
+        for index, value in enumerate(values):
+            running_sum += value
+            if index >= window:
+                running_sum -= values[index - window]
+            if index >= window - 1:
+                smoothed.append(running_sum / window)
+        return smoothed
+
+    # ------------------------------------------------------------------
+    # LOGGING
+    # ------------------------------------------------------------------
+
+    def _log_progress(self, episode: int) -> None:
+        """Print a one-line progress update for the most recent stretch.
+
+        Args:
+            episode: The match number just reached.
+        """
+        recent = self.reward_history[-self.checkpoint_every:]
+        average_recent = sum(recent) / len(recent)
+        epsilon = getattr(self.agent, "epsilon", 0.0)
+        print(
+            f"{LoggingSettings.PREFIX} {self.name} | episode {episode}/{self.episodes} "
+            f"| avg reward {average_recent:+.2f} | explore rate {epsilon:.3f}"
+        )
+
+    # ------------------------------------------------------------------
+    # RUN
+    # ------------------------------------------------------------------
+
     def train(self) -> list[float]:
         """Play and learn from `episodes` matches, returning the reward history.
 
+        Calls the helpers above: `_learn_from_step` each tick, then once per
+        match `save_checkpoint` and `_log_progress` on the checkpoint interval,
+        and `plot_rewards` at the very end.
+
         Returns:
-            The per-match reward totals, also stored on `self.reward_history`
-            and drawn by `plot_rewards`.
+            The per-match reward totals, also stored on `self.reward_history`.
         """
         for episode in range(1, self.episodes + 1):
             observation, _info = self.env.reset()
@@ -97,107 +231,3 @@ class Trainer:
 
         self.plot_rewards(self.reward_history)
         return self.reward_history
-
-    def _learn_from_step(
-        self, observation, action, reward, next_observation, terminated
-    ) -> None:
-        """Hand one move to the agent in whatever form it learns from.
-
-        The two agents learn differently: the tabular agent updates its table on
-        the spot, while the DQN agent files the move into replay memory and then
-        trains on a batch. We pick the right path by what the agent supports.
-
-        Args:
-            observation: Snapshot before the move.
-            action: Move taken.
-            reward: Reward earned.
-            next_observation: Snapshot after the move.
-            terminated: Whether the match ended on this step.
-        """
-        if hasattr(self.agent, "update"):
-            # Tabular Q-learning: adjust the estimate immediately.
-            self.agent.update(
-                observation, action, reward, next_observation, terminated
-            )
-        else:
-            # Replay-based agent (DQN): remember now, learn from a batch.
-            self.agent.remember(
-                observation, action, reward, next_observation, terminated
-            )
-            self.agent.learn()
-
-    def save_checkpoint(self, episode: int) -> None:
-        """Write the current agent to disk, tagged with the episode number.
-
-        Args:
-            episode: Which match we just finished, used in the filename.
-        """
-        checkpoint_path = (
-            Paths.CHECKPOINT_DIR / f"{self.name}_episode_{episode:05d}.ckpt"
-        )
-        self.agent.save(checkpoint_path)
-
-    def plot_rewards(self, rewards: list[float]) -> None:
-        """Save a reward-per-match line chart with a smoothed overlay.
-
-        The raw line is noisy match to match, so a rolling average is drawn on
-        top to make the overall trend (hopefully upward) easy to read.
-
-        Args:
-            rewards: The per-match reward totals from `train`.
-        """
-        figure, axes = plt.subplots(
-            figsize=(Visualization.FIGURE_WIDTH_INCHES, Visualization.FIGURE_HEIGHT_INCHES)
-        )
-        axes.plot(rewards, color="#bbbbbb", linewidth=1, label="Reward per match")
-
-        rolling = self._rolling_mean(rewards, window=50)
-        if rolling:
-            axes.plot(rolling, color="#1f77b4", linewidth=2, label="50-match average")
-
-        axes.set_title(f"Training reward: {self.name}")
-        axes.set_xlabel("Match")
-        axes.set_ylabel("Total reward")
-        axes.legend()
-
-        plot_path = Paths.PLOT_DIR / f"{self.name}_reward_curve.png"
-        figure.savefig(plot_path, dpi=Visualization.DPI, bbox_inches="tight")
-        plt.close(figure)
-
-    def _rolling_mean(self, values: list[float], window: int) -> list[float]:
-        """Average each point with its recent neighbors to smooth the curve.
-
-        Args:
-            values: The raw per-match rewards.
-            window: How many recent matches to average over.
-
-        Returns:
-            The smoothed series, one shorter-window value per input point. Used
-            only by `plot_rewards`.
-        """
-        if len(values) < window:
-            return []
-
-        smoothed: list[float] = []
-        running_sum = 0.0
-        for index, value in enumerate(values):
-            running_sum += value
-            if index >= window:
-                running_sum -= values[index - window]
-            if index >= window - 1:
-                smoothed.append(running_sum / window)
-        return smoothed
-
-    def _log_progress(self, episode: int) -> None:
-        """Print a one-line progress update for the most recent stretch.
-
-        Args:
-            episode: The match number just reached.
-        """
-        recent = self.reward_history[-self.checkpoint_every:]
-        average_recent = sum(recent) / len(recent)
-        epsilon = getattr(self.agent, "epsilon", 0.0)
-        print(
-            f"{Logging.PREFIX} {self.name} | episode {episode}/{self.episodes} "
-            f"| avg reward {average_recent:+.2f} | explore rate {epsilon:.3f}"
-        )
