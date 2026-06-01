@@ -14,7 +14,7 @@ class Evaluator:
         """Store the environment and number of evaluation episodes.
 
         Args:
-            env: A SnakeEnv-compatible environment with rendering enabled.
+            env: A PongEnv-compatible environment with rendering enabled.
             episodes: Number of evaluation episodes per agent.
         """
         # TODO: store

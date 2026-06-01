@@ -18,12 +18,12 @@ class Application:
         Args:
             mode: Either "train" or "evaluate".
         """
-        # TODO: store mode; instantiate GameEngine / SnakeEnv / agents inside run
+        # TODO: store mode; instantiate GameEngine / PongEnv / agents inside run
         raise NotImplementedError
 
     def train(self) -> None:
         """Build env + agent and run the Trainer."""
-        # TODO: GameEngine -> SnakeEnv -> QLearningAgent -> Trainer.train()
+        # TODO: GameEngine -> PongEnv -> QLearningAgent -> Trainer.train()
         raise NotImplementedError
 
     def evaluate(self) -> None:
@@ -39,7 +39,7 @@ class Application:
 
 def main() -> None:
     """Console entry point. Parses flags and runs the Application."""
-    parser = argparse.ArgumentParser(description="Snake RL Agent")
+    parser = argparse.ArgumentParser(description="Pong RL Agent")
     parser.add_argument(
         "--mode",
         choices=("train", "evaluate"),

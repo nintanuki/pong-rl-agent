@@ -17,43 +17,78 @@ class Paths:
 
 
 class Game:
-    """Snake gameplay geometry."""
+    """Pong playfield geometry and motion.
 
-    GRID_WIDTH_CELLS: int = 20
-    GRID_HEIGHT_CELLS: int = 20
-    CELL_SIZE_PIXELS: int = 24
-    INITIAL_SNAKE_LENGTH: int = 3
-    # Frame rate used while rendering. Decouple from step rate so the agent's
-    # visuals stay smooth even when the snake itself only moves a few times
-    # per second.
-    RENDER_FRAMES_PER_SECOND: int = 30
-    # Snake tick rate for the manual test mode in play_human.py. Matches the
-    # ~150 ms timer the original arcade-cabinet build used.
-    HUMAN_STEPS_PER_SECOND: int = 7
+    The agent controls the right-hand paddle; a scripted AI controls the left
+    one. Coordinates are screen-space pixels (x grows rightward, y downward).
+    """
+
+    SCREEN_WIDTH_PIXELS: int = 800
+    SCREEN_HEIGHT_PIXELS: int = 600
+
+    # Paddle dimensions and the gap between each paddle face and its wall.
+    PADDLE_WIDTH_PIXELS: int = 12
+    PADDLE_HEIGHT_PIXELS: int = 90
+    PADDLE_MARGIN_PIXELS: int = 24
+
+    # Per-step paddle travel. The agent paddle and the scripted opponent are
+    # tuned separately so the opponent can be made beatable later.
+    PADDLE_SPEED_PIXELS: int = 6
+    OPPONENT_SPEED_PIXELS: int = 4
+
+    # Ball size and the per-step velocity magnitude on each axis. The sign of
+    # each component is randomized on every serve.
+    BALL_SIZE_PIXELS: int = 14
+    BALL_SPEED_X_PIXELS: int = 5
+    BALL_SPEED_Y_PIXELS: int = 5
+
+    # First side to reach this many points ends an episode.
+    POINTS_TO_WIN: int = 11
+
+    # Frame rate used while rendering a trained agent. Decoupled from the
+    # human-play rate below so each can be tuned independently.
+    RENDER_FRAMES_PER_SECOND: int = 60
+    # Frame rate for the manual test mode in play_human.py.
+    HUMAN_FRAMES_PER_SECOND: int = 60
+
+
+class Colors:
+    """RGB colors for the minimal, asset-free render."""
+
+    BACKGROUND: tuple[int, int, int] = (20, 20, 20)
+    PADDLE: tuple[int, int, int] = (220, 220, 220)
+    BALL: tuple[int, int, int] = (220, 220, 220)
+    CENTER_LINE: tuple[int, int, int] = (80, 80, 80)
+    SCORE: tuple[int, int, int] = (200, 200, 200)
 
 
 class Reward:
-    """Reward shaping for the Snake environment."""
+    """Reward shaping for the Pong environment.
 
-    EAT_FOOD: float = 10.0
-    GAME_OVER: float = -10.0
-    PER_STEP: float = -0.01
-    CLOSER_TO_FOOD: float = 0.1
-    FARTHER_FROM_FOOD: float = -0.1
-    USE_DISTANCE_SHAPING: bool = True
+    Rewards are framed from the agent's (right paddle) point of view: scoring
+    on the opponent is positive, conceding is negative. The optional hit bonus
+    densifies the signal so the agent learns to return the ball before it ever
+    learns to win a full rally.
+    """
+
+    SCORE_POINT: float = 1.0
+    CONCEDE_POINT: float = -1.0
+    PADDLE_HIT: float = 0.1
+    PER_STEP: float = 0.0
+    USE_HIT_SHAPING: bool = True
 
 
 class Training:
     """Training-loop hyperparameters."""
 
-    EPISODES: int = 5000
-    MAX_STEPS_PER_EPISODE: int = 1000
+    EPISODES: int = 2000
+    MAX_STEPS_PER_EPISODE: int = 2000
     LEARNING_RATE: float = 0.1
     DISCOUNT_FACTOR: float = 0.9
     EPSILON_START: float = 1.0
     EPSILON_END: float = 0.05
     EPSILON_DECAY: float = 0.995
-    CHECKPOINT_EVERY_EPISODES: int = 500
+    CHECKPOINT_EVERY_EPISODES: int = 200
     RANDOM_SEED: int = 42
 
 
@@ -86,4 +121,4 @@ class Logging:
     """Console logging levels and prefixes."""
 
     LEVEL: str = "INFO"
-    PREFIX: str = "[snake-rl]"
+    PREFIX: str = "[pong-rl]"

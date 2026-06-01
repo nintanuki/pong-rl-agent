@@ -1,120 +1,129 @@
-"""Human-playable Snake driver.
+"""Human-playable Pong driver.
 
 A small standalone script that wraps `GameEngine` with a keyboard input
-handler, simple pygame rendering, and an optional crunch sound. Lets you
-manually verify that the gameplay logic feels correct before plugging the
-engine into the RL environment.
+handler and simple pygame rendering. Lets you manually verify that the
+gameplay logic feels correct before plugging the engine into the RL
+environment.
 
 Run from the `src/` directory:
 
     python play_human.py
 
-Controls: arrow keys to steer, window close (or X) to quit. There is no
-pause and no fullscreen toggle by design; the script is a sanity test, not
-a polished game build.
+Controls: Up / Down arrows move the right-hand paddle; the left paddle is the
+scripted AI opponent. Close the window (or press Esc) to quit. There is no
+sound, no pause, no countdown, and no fullscreen toggle by design; the script
+is a sanity test, not a polished game build.
 """
-
-from pathlib import Path
 
 import pygame
 
-from game_engine import DOWN, GameEngine, LEFT, RIGHT, UP
-from settings import Game
-
-
-ASSETS_DIR = Path(__file__).resolve().parent / "assets"
-CRUNCH_SOUND_FILE = ASSETS_DIR / "crunch.wav"
-
-# Colors for the minimal-rectangle render.
-COLOR_BACKGROUND = (175, 215, 70)
-COLOR_GRID_DARK = (167, 209, 61)
-COLOR_SNAKE = (52, 90, 32)
-COLOR_FOOD = (200, 38, 0)
-COLOR_SCORE = (56, 74, 12)
+from game_engine import ACTION_DOWN, ACTION_STAY, ACTION_UP, GameEngine
+from settings import Colors, Game
 
 
 class HumanPlayer:
-    """Pygame loop that lets a human pilot the Snake engine."""
+    """Pygame loop that lets a human pilot the agent paddle."""
 
     def __init__(self) -> None:
-        """Initialize pygame, the engine, the window, and the crunch sound."""
+        """Initialize pygame, the engine, and the window."""
         pygame.init()
         self._engine = GameEngine(
-            grid_width=Game.GRID_WIDTH_CELLS,
-            grid_height=Game.GRID_HEIGHT_CELLS,
-            initial_length=Game.INITIAL_SNAKE_LENGTH,
+            screen_width=Game.SCREEN_WIDTH_PIXELS,
+            screen_height=Game.SCREEN_HEIGHT_PIXELS,
+            paddle_width=Game.PADDLE_WIDTH_PIXELS,
+            paddle_height=Game.PADDLE_HEIGHT_PIXELS,
+            paddle_margin=Game.PADDLE_MARGIN_PIXELS,
+            paddle_speed=Game.PADDLE_SPEED_PIXELS,
+            opponent_speed=Game.OPPONENT_SPEED_PIXELS,
+            ball_size=Game.BALL_SIZE_PIXELS,
+            ball_speed_x=Game.BALL_SPEED_X_PIXELS,
+            ball_speed_y=Game.BALL_SPEED_Y_PIXELS,
+            points_to_win=Game.POINTS_TO_WIN,
         )
-        window_width = Game.GRID_WIDTH_CELLS * Game.CELL_SIZE_PIXELS
-        window_height = Game.GRID_HEIGHT_CELLS * Game.CELL_SIZE_PIXELS
-        self._screen = pygame.display.set_mode((window_width, window_height))
-        pygame.display.set_caption("Snake (manual test mode)")
+        self._screen = pygame.display.set_mode(
+            (Game.SCREEN_WIDTH_PIXELS, Game.SCREEN_HEIGHT_PIXELS)
+        )
+        pygame.display.set_caption("Pong (manual test mode)")
         self._clock = pygame.time.Clock()
-        self._font = pygame.font.SysFont(None, 32)
-        self._crunch = self._load_crunch_sound()
+        self._font = pygame.font.SysFont(None, 64)
 
-    def _load_crunch_sound(self) -> pygame.mixer.Sound | None:
-        """Load the crunch sound effect if the asset is present.
-
-        Returns:
-            A loaded pygame Sound, or None when the asset is missing.
-        """
-        if not CRUNCH_SOUND_FILE.exists():
-            return None
-        try:
-            return pygame.mixer.Sound(str(CRUNCH_SOUND_FILE))
-        except pygame.error:
-            return None
-
-    def _handle_input(self) -> bool:
-        """Process the pygame event queue for one frame.
+    def _handle_quit_events(self) -> bool:
+        """Drain the event queue, watching only for quit requests.
 
         Returns:
-            True when the player wants to keep playing, False to quit.
+            True to keep playing, False when the player wants to quit.
         """
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return False
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_UP:
-                    self._engine.set_direction(UP)
-                elif event.key == pygame.K_DOWN:
-                    self._engine.set_direction(DOWN)
-                elif event.key == pygame.K_LEFT:
-                    self._engine.set_direction(LEFT)
-                elif event.key == pygame.K_RIGHT:
-                    self._engine.set_direction(RIGHT)
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                return False
         return True
 
+    def _read_action(self) -> int:
+        """Translate the currently held arrow keys into an engine action.
+
+        Returns:
+            One of ACTION_UP, ACTION_DOWN, or ACTION_STAY.
+        """
+        keys = pygame.key.get_pressed()
+        up_held = keys[pygame.K_UP]
+        down_held = keys[pygame.K_DOWN]
+        if up_held and not down_held:
+            return ACTION_UP
+        if down_held and not up_held:
+            return ACTION_DOWN
+        return ACTION_STAY
+
     def _draw(self) -> None:
-        """Render the current frame: background, food, snake, score."""
-        self._screen.fill(COLOR_BACKGROUND)
-        cell = Game.CELL_SIZE_PIXELS
+        """Render one frame: background, center line, paddles, ball, score."""
+        engine = self._engine
+        self._screen.fill(Colors.BACKGROUND)
 
-        # Checkerboard background for visual readability.
-        for row in range(Game.GRID_HEIGHT_CELLS):
-            for col in range(Game.GRID_WIDTH_CELLS):
-                if (row + col) % 2 == 0:
-                    rect = pygame.Rect(col * cell, row * cell, cell, cell)
-                    pygame.draw.rect(self._screen, COLOR_GRID_DARK, rect)
+        # Dashed center line.
+        dash_height = 16
+        gap = 12
+        x = engine.screen_width // 2 - 2
+        for y in range(0, engine.screen_height, dash_height + gap):
+            pygame.draw.rect(self._screen, Colors.CENTER_LINE, (x, y, 4, dash_height))
 
-        # Food.
-        food_x, food_y = self._engine.food
-        food_rect = pygame.Rect(food_x * cell, food_y * cell, cell, cell)
-        pygame.draw.rect(self._screen, COLOR_FOOD, food_rect)
-
-        # Snake body, head distinguished by a subtle inset.
-        for index, (x, y) in enumerate(self._engine.body):
-            rect = pygame.Rect(x * cell, y * cell, cell, cell)
-            pygame.draw.rect(self._screen, COLOR_SNAKE, rect)
-            if index == 0:
-                inner = rect.inflate(-cell // 3, -cell // 3)
-                pygame.draw.rect(self._screen, COLOR_BACKGROUND, inner, width=2)
-
-        # Score in the upper-left corner.
-        score_surface = self._font.render(
-            f"Score: {self._engine.score}", True, COLOR_SCORE
+        # Paddles.
+        half_paddle = engine.paddle_height / 2
+        agent_rect = pygame.Rect(
+            engine.agent_paddle_x,
+            engine.agent_paddle_y - half_paddle,
+            engine.paddle_width,
+            engine.paddle_height,
         )
-        self._screen.blit(score_surface, (10, 10))
+        opponent_rect = pygame.Rect(
+            engine.opponent_paddle_x,
+            engine.opponent_paddle_y - half_paddle,
+            engine.paddle_width,
+            engine.paddle_height,
+        )
+        pygame.draw.rect(self._screen, Colors.PADDLE, agent_rect)
+        pygame.draw.rect(self._screen, Colors.PADDLE, opponent_rect)
+
+        # Ball.
+        ball_x, ball_y = engine.ball_position
+        half_ball = engine.ball_size / 2
+        ball_rect = pygame.Rect(
+            ball_x - half_ball, ball_y - half_ball, engine.ball_size, engine.ball_size
+        )
+        pygame.draw.rect(self._screen, Colors.BALL, ball_rect)
+
+        # Score: opponent on the left of center, agent on the right.
+        opponent_surface = self._font.render(
+            str(engine.opponent_score), True, Colors.SCORE
+        )
+        agent_surface = self._font.render(str(engine.agent_score), True, Colors.SCORE)
+        center_x = engine.screen_width // 2
+        self._screen.blit(
+            opponent_surface, opponent_surface.get_rect(midright=(center_x - 40, 50))
+        )
+        self._screen.blit(
+            agent_surface, agent_surface.get_rect(midleft=(center_x + 40, 50))
+        )
 
         pygame.display.flip()
 
@@ -122,16 +131,12 @@ class HumanPlayer:
         """Run the human-play loop until the window is closed."""
         running = True
         while running:
-            running = self._handle_input()
-            ate_food, game_over = self._engine.step()
-            if ate_food and self._crunch is not None:
-                self._crunch.play()
-            if game_over:
+            running = self._handle_quit_events()
+            result = self._engine.step(self._read_action())
+            if result.done:
                 self._engine.reset()
             self._draw()
-            # Tick at the human step rate so the snake feels playable; the
-            # render-fps setting is for the trained-agent demo, not for here.
-            self._clock.tick(Game.HUMAN_STEPS_PER_SECOND)
+            self._clock.tick(Game.HUMAN_FRAMES_PER_SECOND)
         pygame.quit()
 
 

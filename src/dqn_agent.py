@@ -8,7 +8,7 @@ standard tricks from the original DQN paper. Reads its hyperparameters from
 
 
 class DQNAgent:
-    """Deep Q-learning over the same 11-boolean state vector as the tabular agent."""
+    """Deep Q-learning over the same observation vector as the tabular agent."""
 
     def __init__(
         self,

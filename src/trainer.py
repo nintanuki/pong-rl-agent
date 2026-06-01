@@ -13,7 +13,7 @@ class Trainer:
         """Store collaborators and run length.
 
         Args:
-            env: A SnakeEnv-compatible environment.
+            env: A PongEnv-compatible environment.
             agent: An agent exposing select_action / update / decay_epsilon.
             episodes: Total number of episodes to train for.
             max_steps: Hard cap on steps per episode.
