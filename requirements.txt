@@ -1,0 +1,6 @@
+# Pin exact versions with `pip freeze > requirements.txt` after install.
+gymnasium
+numpy
+pygame
+matplotlib
+torch
